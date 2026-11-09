@@ -1,9 +1,0 @@
-{
-  "name": "Légzés és koherencia",
-  "short_name": "Légzés",
-  "start_url": "./",
-  "display": "standalone",
-  "background_color": "#101522",
-  "theme_color": "#101522",
-  "icons": []
-}
