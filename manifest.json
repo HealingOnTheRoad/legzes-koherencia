@@ -1,0 +1,10 @@
+{
+  "name": "Heart Coherence",
+  "short_name": "HeartCoherence",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0b1420",
+  "theme_color": "#101c29",
+  "description": "Adaptív légzés- és szívritmus-koherencia tréner",
+  "icons": []
+}

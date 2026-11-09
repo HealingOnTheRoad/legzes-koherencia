@@ -1,112 +1,80 @@
 <!doctype html>
 <html lang="hu">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#101522">
-<link rel="manifest" href="manifest.webmanifest">
-<title>Légzés • Koherencia</title>
-<style>
-:root{color-scheme:dark;--bg:#101522;--panel:#1a2232;--muted:#9ba8bc;--text:#f4f6fb;--aqua:#8de3d0;--gold:#e8c98c}
-*{box-sizing:border-box} body{margin:0;background:radial-gradient(ellipse at 50% 5%,#26364b 0,#101522 55%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
-main{max-width:520px;margin:auto;padding:calc(18px + env(safe-area-inset-top)) 20px calc(28px + env(safe-area-inset-bottom))}
-header{text-align:center;margin:8px 0 18px} .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--aqua)} h1{font-size:25px;font-weight:500;margin:8px 0 4px}.sub{color:var(--muted);font-size:13px}
-.panel{background:#1a2232d9;border:1px solid #ffffff12;border-radius:22px;padding:18px;margin:14px 0;box-shadow:0 14px 40px #0003}
-.stage{height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden}
-.circle-wrap{width:220px;height:220px;display:grid;place-items:center;position:relative}
-.circle{width:130px;height:130px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#c3fff0,#75cbbd 42%,#3d7f83 100%);box-shadow:0 0 45px #76d8c455, inset 0 0 22px #fff7;transform:scale(.62);transition:transform .35s ease;will-change:transform}
-.circle.inhale{transform:scale(1.45)}.circle.exhale{transform:scale(.62)}
-.phase{font-size:19px;letter-spacing:.04em;margin-top:18px}.timer{font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px;margin-top:5px}
-.controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px}
-button,select{border:1px solid #ffffff20;background:#263247;color:var(--text);padding:13px 17px;border-radius:14px;font-size:14px}
-button.primary{background:var(--aqua);color:#10212a;border:0;font-weight:650}button:disabled{opacity:.45}
-.row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0}.row label{color:var(--muted);font-size:13px}
-select{padding:10px 12px}
-.small{font-size:12px;color:var(--muted);line-height:1.5}
-.metric{font-size:32px;font-weight:500;font-variant-numeric:tabular-nums}.metric span{font-size:13px;color:var(--muted);font-weight:400}
-.status{font-size:13px;color:var(--aqua);min-height:20px}.bar{height:5px;background:#ffffff16;border-radius:8px;overflow:hidden;margin-top:10px}.bar>i{display:block;height:100%;width:0;background:var(--aqua);transition:width .2s}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.metricbox{background:#ffffff08;border-radius:15px;padding:13px}
-.note{border-left:2px solid var(--gold);padding-left:12px;color:#c8d0dd;font-size:12px;line-height:1.55}
-footer{text-align:center;color:#718097;font-size:11px;padding:12px}
-.hidden{display:none} video,canvas{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101c29">
+  <meta name="description" content="Adaptív légzés- és szívritmus-koherencia tréner">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+  <title>Heart Coherence</title>
 </head>
-<body><main>
-<header><div class="eyebrow">Lassú légzés • saját ritmus</div><h1>Légzés & koherencia</h1><div class="sub">Egy nyugodt perc, egy lélegzet egyszerre.</div></header>
-<section class="panel stage">
- <div class="circle-wrap"><div id="orb" class="circle"></div></div>
- <div id="phase" class="phase">Készen állsz?</div><div id="count" class="timer">5,5 mp be • 5,5 mp ki</div>
-</section>
-<section class="panel">
- <div class="row"><label for="pace">Légzési ritmus</label><select id="pace"><option value="5.5">5,5 légzés/perc</option><option value="4.5">4,5 légzés/perc</option><option value="5">5 légzés/perc</option><option value="6">6 légzés/perc</option><option value="6.5">6,5 légzés/perc</option><option value="7">7 légzés/perc</option></select></div>
- <div class="row"><label for="gong">Gong a fázisváltásnál</label><input id="gong" type="checkbox" checked style="width:20px;height:20px;accent-color:#8de3d0"></div>
- <div class="controls"><button id="start" class="primary">Indítás</button><button id="stop">Szünet</button></div>
- <p class="small">A kör belégzéskor kitágul, kilégzéskor összehúzódik. A ritmus szimmetrikus; a kiválasztott légzés/perc alapján számoljuk a két fázist.</p>
-</section>
-<section class="panel">
- <div class="row"><div><div class="eyebrow">Kamerás pulzusmérés</div><div class="small">Ujjbegyes optikai pulzusjel (kísérleti)</div></div><button id="camera">Kamera indítása</button></div>
- <video id="video" autoplay muted playsinline></video><canvas id="canvas" width="64" height="64"></canvas>
- <div class="grid">
-  <div class="metricbox"><div class="metric" id="bpm">— <span>BPM</span></div><div class="small">Becsült pulzus</div></div>
-  <div class="metricbox"><div class="metric" id="ibi">— <span>ms</span></div><div class="small">Utolsó ütésköz</div></div>
- </div>
- <div class="bar"><i id="signal"></i></div><div class="status" id="camstatus">A méréshez engedélyezd a kamerát, majd finoman takard le a hátsó kamerát az ujjbegyeddel.</div>
- <p class="small">Tartsd mozdulatlanul az ujjbegyed a hátsó kamera és – ha bekapcsol – a vaku fölött, enyhe nyomással. A túl erős nyomás ronthatja a jelet.</p>
- <div class="note">Fontos: ez a prototípus pulzust és ütésközöket becsül, nem mér klinikailag validált „szívkoherenciát”, és nem állítja automatikusan a légzést. A kamera/vaku támogatása iPhone-modellenként és böngészőnként eltérhet.</div>
-</section>
-<footer>Az app adatai helyben, a böngészőben maradnak. Nem egészségügyi diagnosztikai eszköz.</footer>
-</main>
-<script>
-const $=id=>document.getElementById(id);
-let running=false, phaseTimer=null, phaseStart=0, phaseDur=5500, raf=0, stream=null, ctx=null;
-function gong(){
- if(!$('gong').checked)return;
- try{const ac=ctx||(ctx=new (window.AudioContext||window.webkitAudioContext)()); if(ac.state==='suspended')ac.resume();
- const t=ac.currentTime, fundamental=220;
- [1,2.76,4.07,5.43,6.8].forEach((ratio,i)=>{let o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=fundamental*ratio;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.055/(i+1),t+.015);g.gain.exponentialRampToValueAtTime(.0001,t+1.8);o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+1.85)});
- }catch(e){}
-}
-function setPace(){let n=Number($('pace').value);phaseDur=60000/(2*n);$('count').textContent=(phaseDur/1000).toFixed(1).replace('.',',')+' mp be • '+(phaseDur/1000).toFixed(1).replace('.',',')+' mp ki'}
-$('pace').addEventListener('change',setPace);setPace();
-function phase(name){$('phase').textContent=name==='inhale'?'Belégzés':'Kilégzés';$('orb').className='circle '+name;phaseStart=performance.now();gong();clearInterval(phaseTimer);phaseTimer=setInterval(()=>{if(!running)return;let left=Math.max(0,phaseDur-(performance.now()-phaseStart));$('count').textContent=(left/1000).toFixed(1).replace('.',',')+' mp';if(left<=0){phase(name==='inhale'?'exhale':'inhale')}},50)}
-$('start').onclick=()=>{if(running)return;running=true;setPace();phase('inhale')};
-$('stop').onclick=()=>{running=false;clearInterval(phaseTimer);$('phase').textContent='Szünet';$('orb').className='circle';$('count').textContent=(phaseDur/1000).toFixed(1).replace('.',',')+' mp be • '+(phaseDur/1000).toFixed(1).replace('.',',')+' mp ki'};
-let samples=[], intervals=[], lastPeak=0, lastValue=0, lastPeakAt=0, peakHistory=[], lastFrame=0, fingerMode=false;
-async function startCamera(){
- try{
-  $('camstatus').textContent='Kameraengedély kérése…';
-  stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:640},height:{ideal:480},frameRate:{ideal:30}}});
-  $('video').srcObject=stream;await $('video').play();
-  const track=stream.getVideoTracks()[0];
-  try{await track.applyConstraints({advanced:[{torch:true}]});}catch(e){}
-  fingerMode=true;$('camera').textContent='Kamera leállítása';$('camstatus').textContent='Mérés folyamatban – tartsd stabilan az ujjad a kamerán.';
-  processFrame();
- }catch(e){$('camstatus').textContent='Nem sikerült elindítani a kamerát. Nyisd meg HTTPS-kapcsolaton Safari-ban, és engedélyezd a kamerát. ('+e.message+')'}
-}
-function stopCamera(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}fingerMode=false;cancelAnimationFrame(raf);$('camera').textContent='Kamera indítása';$('camstatus').textContent='A kamera leállítva.'}
-$('camera').onclick=()=>stream?stopCamera():startCamera();
-function processFrame(){
- if(!fingerMode)return;
- const v=$('video'),c=$('canvas'),g=c.getContext('2d',{willReadFrequently:true});
- if(v.readyState>=2){
-  g.drawImage(v,0,0,64,64);let d=g.getImageData(0,0,64,64).data,sum=0,count=0;
-  for(let i=0;i<d.length;i+=4){sum+=d[i];count++}
-  let val=sum/count,now=performance.now();samples.push({t:now,v:val});if(samples.length>180)samples.shift();
-  if(samples.length>12){
-   let recent=samples.slice(-30),mean=recent.reduce((a,b)=>a+b.v,0)/recent.length;
-   let variance=recent.reduce((a,b)=>a+(b.v-mean)**2,0)/recent.length,sd=Math.sqrt(variance);
-   let smooth=(samples.at(-1).v+samples.at(-2).v+samples.at(-3).v)/3;
-   let prev=(samples.at(-4).v+samples.at(-5).v+samples.at(-6).v)/3;
-   let threshold=mean+Math.max(1.2,sd*.18);
-   if(prev<smooth && smooth>threshold && now-lastPeakAt>350){
-    if(lastPeakAt){let ibi=now-lastPeakAt;if(ibi>400&&ibi<1500){intervals.push(ibi);if(intervals.length>20)intervals.shift();let avg=intervals.slice(-5).reduce((a,b)=>a+b,0)/Math.min(5,intervals.length);$('bpm').innerHTML=Math.round(60000/avg)+' <span>BPM</span>';$('ibi').innerHTML=Math.round(ibi)+' <span>ms</span>'}}
-    lastPeakAt=now;
-   }
-   $('signal').style.width=Math.min(100,sd*7)+'%';
-  }
- }
- raf=requestAnimationFrame(processFrame)
-}
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&running){running=false;clearInterval(phaseTimer);$('phase').textContent='Szünet – visszatéréskor indítsd újra'}});
-if('serviceWorker' in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
-</script></body></html>
+<body>
+  <main class="app">
+    <header>
+      <div>
+        <p class="eyebrow">ADAPTÍV LÉGZÉSTRENING</p>
+        <h1>Heart Coherence</h1>
+      </div>
+      <span id="status" class="status">Készen áll</span>
+    </header>
+
+    <section class="breathing-panel">
+      <div class="orb-wrap">
+        <div id="orb" class="orb">
+          <div class="orb-inner">
+            <span id="phase">Készen áll</span>
+            <strong id="countdown">5,5</strong>
+            <small id="phaseHint">mp</small>
+          </div>
+        </div>
+      </div>
+      <div class="cycle">
+        <div><span>Belégzés</span><strong id="inhaleValue">5,5 mp</strong></div>
+        <div><span>Kilégzés</span><strong id="exhaleValue">5,5 mp</strong></div>
+        <div><span>Ritmus</span><strong id="rpmValue">5,45 / perc</strong></div>
+      </div>
+      <div class="controls">
+        <button id="startBtn" class="primary">Légzés indítása</button>
+        <button id="stopBtn" class="secondary" disabled>Leállítás</button>
+      </div>
+      <p class="hint">A kezdőritmus 5,5 mp belégzés + 5,5 mp kilégzés. Lélegezz kényelmesen, erőltetés nélkül.</p>
+    </section>
+
+    <section class="metrics">
+      <div class="section-title"><h2>Élő mérés</h2><span id="quality" class="quality">Nincs mérés</span></div>
+      <div class="metric-grid">
+        <article><span>Szívfrekvencia</span><strong id="bpm">—</strong><small>BPM</small></article>
+        <article><span>HRV · RMSSD</span><strong id="rmssd">—</strong><small>ms</small></article>
+        <article><span>HRV · SDNN</span><strong id="sdnn">—</strong><small>ms</small></article>
+        <article><span>Ütésköz</span><strong id="ibi">—</strong><small>ms</small></article>
+      </div>
+      <p class="hint">A koherencia pontszám és a légzés–szívritmus kapcsolat elemzése a következő fejlesztési lépésben kerül be. A HRV önmagában nem koherenciamérés.</p>
+    </section>
+
+    <section class="sensor">
+      <div class="section-title"><h2>Kameraalapú pulzusmérés</h2><span id="cameraStatus" class="quality">Kikapcsolva</span></div>
+      <p class="hint">Helyezd az ujjbegyed finoman a hátsó kamerára és a vakura. Ne nyomd erősen. A böngésző engedélyt kér a kamerához.</p>
+      <div class="controls">
+        <button id="cameraBtn" class="primary">Pulzusmérés indítása</button>
+        <button id="cameraStopBtn" class="secondary" disabled>Mérés leállítása</button>
+      </div>
+      <video id="camera" autoplay playsinline muted></video>
+      <canvas id="sampleCanvas" width="32" height="32" hidden></canvas>
+    </section>
+
+    <section class="method">
+      <h2>Optimalizálási terv</h2>
+      <ol>
+        <li><b>Kalibrálás:</b> 5,5 + 5,5 mp kezdőritmus.</li>
+        <li><b>Rezonanciateszt:</b> külön belégzési és kilégzési idők óvatos kipróbálása.</li>
+        <li><b>Adaptív szakasz:</b> a kedvező kombináció finomhangolása.</li>
+      </ol>
+      <p class="hint">A későbbi algoritmus csak jó minőségű, elegendő hosszúságú pulzusadatból értékel. Nem cél a légzés visszatartása vagy a kellemetlenül lassú légzés.</p>
+    </section>
+
+    <footer>Adatvédelem: ez a prototípus az adatokat helyben, a böngészőben dolgozza fel. Nem küld pulzusadatot szerverre.</footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
