@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#101c29">
   <meta name="description" content="Adaptív légzés- és szívritmus-koherencia tréner">
   <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
   <title>Heart Coherence</title>
 </head>
@@ -32,49 +33,66 @@
       <div class="cycle">
         <div><span>Belégzés</span><strong id="inhaleValue">5,5 mp</strong></div>
         <div><span>Kilégzés</span><strong id="exhaleValue">5,5 mp</strong></div>
-        <div><span>Ritmus</span><strong id="rpmValue">5,45 / perc</strong></div>
+        <div><span>Teljes ritmus</span><strong id="rpmValue">5,45 / perc</strong></div>
       </div>
       <div class="controls">
         <button id="startBtn" class="primary">Légzés indítása</button>
         <button id="stopBtn" class="secondary" disabled>Leállítás</button>
       </div>
-      <p class="hint">A kezdőritmus 5,5 mp belégzés + 5,5 mp kilégzés. Lélegezz kényelmesen, erőltetés nélkül.</p>
+      <p class="hint">Kezdőritmus: 5,5 mp belégzés + 5,5 mp kilégzés. Lélegezz kényelmesen, erőltetés nélkül.</p>
+    </section>
+
+    <section class="settings">
+      <div class="section-title"><h2>Független légzésbeállítás</h2><span class="quality">Kézi próba</span></div>
+      <label class="range-row" for="inhaleRange">
+        <span>Belégzés <strong id="inhaleSetting">5,5 mp</strong></span>
+        <input id="inhaleRange" type="range" min="3" max="8" step="0.1" value="5.5">
+      </label>
+      <label class="range-row" for="exhaleRange">
+        <span>Kilégzés <strong id="exhaleSetting">5,5 mp</strong></span>
+        <input id="exhaleRange" type="range" min="3" max="8" step="0.1" value="5.5">
+      </label>
+      <p id="cycleValidation" class="hint">A teljes ciklus cél-tartománya 9,2–13,3 mp (kb. 4,5–6,5 légzés/perc). A két szakasz külön állítható.</p>
+      <p class="hint">A kézi beállítás már működik. Az automatikus, szakaszos rezonanciateszt és az azt követő adaptív finomhangolás még nincs bekapcsolva.</p>
     </section>
 
     <section class="metrics">
-      <div class="section-title"><h2>Élő mérés</h2><span id="quality" class="quality">Nincs mérés</span></div>
+      <div class="section-title"><h2>Élő pulzus- és HRV/PRV-becslés</h2><span id="quality" class="quality">Nincs mérés</span></div>
       <div class="metric-grid">
-        <article><span>Szívfrekvencia</span><strong id="bpm">—</strong><small>BPM</small></article>
-        <article><span>HRV · RMSSD</span><strong id="rmssd">—</strong><small>ms</small></article>
-        <article><span>HRV · SDNN</span><strong id="sdnn">—</strong><small>ms</small></article>
-        <article><span>Ütésköz</span><strong id="ibi">—</strong><small>ms</small></article>
+        <article><span>Szívfrekvencia</span><strong id="bpm">—</strong><small>BPM · rövid ablak</small></article>
+        <article><span>HRV / PRV · RMSSD</span><strong id="rmssd">—</strong><small>ms</small></article>
+        <article><span>HRV / PRV · SDNN</span><strong id="sdnn">—</strong><small>ms</small></article>
+        <article><span>Átlagos ütésköz</span><strong id="ibi">—</strong><small>ms</small></article>
       </div>
-      <p class="hint">A koherencia pontszám és a légzés–szívritmus kapcsolat elemzése a következő fejlesztési lépésben kerül be. A HRV önmagában nem koherenciamérés.</p>
+      <p id="hrvNote" class="hint">A HRV/PRV-becsléshez kb. 60 mp folyamatos, megfelelő minőségű jel és legalább 30 elfogadott ütésköz szükséges.</p>
+      <p id="qualityDetail" class="quality-detail">A jelminőség technikai becslés, nem orvosi minősítés.</p>
+      <p id="measurementInfo" class="hint">Mérési adatok még nem érkeztek.</p>
+      <p class="hint">A kamera által mért pulzusütés-közökből számolt érték PRV-becslés, nem EKG-alapú HRV. Koherencia-pontszámot még nem jelenítünk meg: ahhoz külön, megalapozott légzés–pulzus szinkronizációs elemzés kell.</p>
     </section>
 
     <section class="sensor">
       <div class="section-title"><h2>Kameraalapú pulzusmérés</h2><span id="cameraStatus" class="quality">Kikapcsolva</span></div>
-      <p class="hint">Helyezd az ujjbegyed finoman a hátsó kamerára és a vakura. Ne nyomd erősen. A böngésző engedélyt kér a kamerához.</p>
+      <p class="hint">Helyezd az ujjbegyed finoman a hátsó kamerára és a vakura. Ne nyomd erősen. Tartsd mozdulatlanul a telefont és az ujjadat. A böngésző kameraengedélyt kér.</p>
       <div class="controls">
         <button id="cameraBtn" class="primary">Pulzusmérés indítása</button>
         <button id="cameraStopBtn" class="secondary" disabled>Mérés leállítása</button>
       </div>
       <video id="camera" autoplay playsinline muted></video>
-      <canvas id="sampleCanvas" width="32" height="32" hidden></canvas>
+      <canvas id="sampleCanvas" width="64" height="64" hidden></canvas>
     </section>
 
     <section class="method">
-      <h2>Optimalizálási terv</h2>
+      <h2>Hibrid optimalizálási terv</h2>
       <ol>
-        <li><b>Kalibrálás:</b> 5,5 + 5,5 mp kezdőritmus.</li>
-        <li><b>Rezonanciateszt:</b> külön belégzési és kilégzési idők óvatos kipróbálása.</li>
-        <li><b>Adaptív szakasz:</b> a kedvező kombináció finomhangolása.</li>
+        <li><b>Kiinduló kalibrálás:</b> 5,5 + 5,5 mp.</li>
+        <li><b>Egyéni rezonanciateszt:</b> különböző belégzési és kilégzési idők szakaszos összehasonlítása.</li>
+        <li><b>Adaptív finomhangolás:</b> a kedvező kombináció óvatos, független módosítása.</li>
       </ol>
-      <p class="hint">A későbbi algoritmus csak jó minőségű, elegendő hosszúságú pulzusadatból értékel. Nem cél a légzés visszatartása vagy a kellemetlenül lassú légzés.</p>
+      <p class="hint">A rezonanciakeresés célja a teljes légzési ciklus 4,5–6,5 légzés/perc körüli tartományának személyre szabott feltérképezése, nem egy mindenkire érvényes fix ritmus előírása.</p>
     </section>
 
-    <footer>Adatvédelem: ez a prototípus az adatokat helyben, a böngészőben dolgozza fel. Nem küld pulzusadatot szerverre.</footer>
+    <footer>Adatvédelem: a kamera képe és a pulzusminták helyben, a böngészőben kerülnek feldolgozásra; a prototípus nem küld egészségügyi adatot szerverre. Nem orvosi eszköz.</footer>
   </main>
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
