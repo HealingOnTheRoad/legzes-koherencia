@@ -1,98 +1,28 @@
 <!doctype html>
-<html lang="hu">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#101c29">
-  <meta name="description" content="Adaptív légzés- és szívritmus-koherencia tréner">
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css">
-  <title>Heart Coherence</title>
-</head>
-<body>
-  <main class="app">
-    <header>
-      <div>
-        <p class="eyebrow">ADAPTÍV LÉGZÉSTRENING</p>
-        <h1>Heart Coherence</h1>
-      </div>
-      <span id="status" class="status">Készen áll</span>
-    </header>
-
-    <section class="breathing-panel">
-      <div class="orb-wrap">
-        <div id="orb" class="orb">
-          <div class="orb-inner">
-            <span id="phase">Készen áll</span>
-            <strong id="countdown">5,5</strong>
-            <small id="phaseHint">mp</small>
-          </div>
-        </div>
-      </div>
-      <div class="cycle">
-        <div><span>Belégzés</span><strong id="inhaleValue">5,5 mp</strong></div>
-        <div><span>Kilégzés</span><strong id="exhaleValue">5,5 mp</strong></div>
-        <div><span>Teljes ritmus</span><strong id="rpmValue">5,45 / perc</strong></div>
-      </div>
-      <div class="controls">
-        <button id="startBtn" class="primary">Légzés indítása</button>
-        <button id="stopBtn" class="secondary" disabled>Leállítás</button>
-      </div>
-      <p class="hint">Kezdőritmus: 5,5 mp belégzés + 5,5 mp kilégzés. Lélegezz kényelmesen, erőltetés nélkül.</p>
-    </section>
-
-    <section class="settings">
-      <div class="section-title"><h2>Független légzésbeállítás</h2><span class="quality">Kézi próba</span></div>
-      <label class="range-row" for="inhaleRange">
-        <span>Belégzés <strong id="inhaleSetting">5,5 mp</strong></span>
-        <input id="inhaleRange" type="range" min="3" max="8" step="0.1" value="5.5">
-      </label>
-      <label class="range-row" for="exhaleRange">
-        <span>Kilégzés <strong id="exhaleSetting">5,5 mp</strong></span>
-        <input id="exhaleRange" type="range" min="3" max="8" step="0.1" value="5.5">
-      </label>
-      <p id="cycleValidation" class="hint">A teljes ciklus cél-tartománya 9,2–13,3 mp (kb. 4,5–6,5 légzés/perc). A két szakasz külön állítható.</p>
-      <p class="hint">A kézi beállítás már működik. Az automatikus, szakaszos rezonanciateszt és az azt követő adaptív finomhangolás még nincs bekapcsolva.</p>
-    </section>
-
-    <section class="metrics">
-      <div class="section-title"><h2>Élő pulzus- és HRV/PRV-becslés</h2><span id="quality" class="quality">Nincs mérés</span></div>
-      <div class="metric-grid">
-        <article><span>Szívfrekvencia</span><strong id="bpm">—</strong><small>BPM · rövid ablak</small></article>
-        <article><span>HRV / PRV · RMSSD</span><strong id="rmssd">—</strong><small>ms</small></article>
-        <article><span>HRV / PRV · SDNN</span><strong id="sdnn">—</strong><small>ms</small></article>
-        <article><span>Átlagos ütésköz</span><strong id="ibi">—</strong><small>ms</small></article>
-      </div>
-      <p id="hrvNote" class="hint">A HRV/PRV-becsléshez kb. 60 mp folyamatos, megfelelő minőségű jel és legalább 30 elfogadott ütésköz szükséges.</p>
-      <p id="qualityDetail" class="quality-detail">A jelminőség technikai becslés, nem orvosi minősítés.</p>
-      <p id="measurementInfo" class="hint">Mérési adatok még nem érkeztek.</p>
-      <p class="hint">A kamera által mért pulzusütés-közökből számolt érték PRV-becslés, nem EKG-alapú HRV. Koherencia-pontszámot még nem jelenítünk meg: ahhoz külön, megalapozott légzés–pulzus szinkronizációs elemzés kell.</p>
-    </section>
-
-    <section class="sensor">
-      <div class="section-title"><h2>Kameraalapú pulzusmérés</h2><span id="cameraStatus" class="quality">Kikapcsolva</span></div>
-      <p class="hint">Helyezd az ujjbegyed finoman a hátsó kamerára és a vakura. Ne nyomd erősen. Tartsd mozdulatlanul a telefont és az ujjadat. A böngésző kameraengedélyt kér.</p>
-      <div class="controls">
-        <button id="cameraBtn" class="primary">Pulzusmérés indítása</button>
-        <button id="cameraStopBtn" class="secondary" disabled>Mérés leállítása</button>
-      </div>
-      <video id="camera" autoplay playsinline muted></video>
-      <canvas id="sampleCanvas" width="64" height="64" hidden></canvas>
-    </section>
-
-    <section class="method">
-      <h2>Hibrid optimalizálási terv</h2>
-      <ol>
-        <li><b>Kiinduló kalibrálás:</b> 5,5 + 5,5 mp.</li>
-        <li><b>Egyéni rezonanciateszt:</b> különböző belégzési és kilégzési idők szakaszos összehasonlítása.</li>
-        <li><b>Adaptív finomhangolás:</b> a kedvező kombináció óvatos, független módosítása.</li>
-      </ol>
-      <p class="hint">A rezonanciakeresés célja a teljes légzési ciklus 4,5–6,5 légzés/perc körüli tartományának személyre szabott feltérképezése, nem egy mindenkire érvényes fix ritmus előírása.</p>
-    </section>
-
-    <footer>Adatvédelem: a kamera képe és a pulzusminták helyben, a böngészőben kerülnek feldolgozásra; a prototípus nem küld egészségügyi adatot szerverre. Nem orvosi eszköz.</footer>
-  </main>
-  <script type="module" src="app.js"></script>
-</body>
-</html>
+<html lang="hu"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101c29"><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="style.css"><title>Heart Coherence</title></head>
+<body><main class="app">
+<header><div><p class="eyebrow">ADAPTÍV LÉGZÉS · PPG</p><h1>Heart Coherence</h1></div><span id="status" class="pill">Készen áll</span></header>
+<section class="panel hero">
+<div class="orb-wrap"><div id="orb" class="orb"><div><span id="phase">Készen áll</span><strong id="countdown">5,5</strong><small>másodperc</small></div></div></div>
+<div class="timings"><div><small>Belégzés</small><b id="inhaleValue">5,5 mp</b></div><div><small>Kilégzés</small><b id="exhaleValue">5,5 mp</b></div><div><small>Légzés</small><b id="rpmValue">5,45 / perc</b></div></div>
+<div class="buttons"><button id="startBtn" class="primary">Légzés indítása</button><button id="stopBtn" disabled>Leállítás</button></div>
+<p class="note">Kényelmes, erőltetés nélküli légzés. Szédülés vagy légszomj esetén állj meg, és térj vissza a természetes légzéshez.</p>
+</section>
+<section class="panel"><div class="heading"><h2>PPG pulzusmérés</h2><span id="cameraStatus" class="pill">Kikapcsolva</span></div>
+<p class="note">Tedd az ujjbegyed finoman a hátsó kamerára és a vaku közelébe. Maradj mozdulatlan; a mérés HTTPS-en, támogatott böngészőben működik.</p>
+<div class="buttons"><button id="cameraBtn" class="primary">Kamera indítása</button><button id="cameraStopBtn" disabled>Leállítás</button></div>
+<video id="camera" autoplay playsinline muted></video><canvas id="sampleCanvas" width="24" height="24" hidden></canvas>
+<div class="grid metrics"><article><small>Pulzus</small><b id="bpm">—</b><small>BPM</small></article><article><small>PRV · RMSSD</small><b id="rmssd">—</b><small>ms</small></article><article><small>PRV · SDNN</small><b id="sdnn">—</b><small>ms</small></article><article><small>Jelminőség</small><b id="quality">—</b><small id="qualityDetail">Nincs adat</small></article></div>
+<p class="note">A kamerás PPG-ből számolt RMSSD/SDNN pulzusvariabilitás-becslés (PRV), nem EKG-HRV. A pontosság készülék-, fény-, nyomás- és mozgásfüggő.</p></section>
+<section class="panel"><div class="heading"><h2>Egyéni rezonanciateszt</h2><span class="pill">Szakaszos</span></div>
+<p class="note">A teszt a belégzést és kilégzést külön-külön variálja. Minden szakaszban a vezetett légzéshez társuló pulzusválaszt vizsgálja. Csak jó jelminőség mellett értékel.</p>
+<div class="grid settings"><label>Belégzés alsó határ (mp)<input id="inhMin" type="number" min="4" max="7" step=".1" value="4.5"></label><label>Belégzés felső határ (mp)<input id="inhMax" type="number" min="4" max="7" step=".1" value="6.5"></label><label>Kilégzés alsó határ (mp)<input id="exMin" type="number" min="4" max="7" step=".1" value="4.5"></label><label>Kilégzés felső határ (mp)<input id="exMax" type="number" min="4" max="7" step=".1" value="6.5"></label><label>Szakasz hossza (mp)<input id="stageLength" type="number" min="30" max="120" step="5" value="60"></label></div>
+<div class="buttons"><button id="scanBtn" class="primary">Rezonanciateszt indítása</button><button id="autoBtn">Adaptív finomhangolás</button></div>
+<div id="scanStatus" class="result">A teszthez előbb indítsd el a kamerás pulzusmérést.</div><div id="scanResults" class="result"></div>
+</section>
+<section class="panel"><div class="heading"><h2>Légzés–pulzus kapcsolat</h2><span id="coherenceLabel" class="pill">Nincs értékelés</span></div>
+<div class="grid metrics"><article><small>RSA amplitúdó</small><b id="rsa">—</b><small>ms</small></article><article><small>Fáziszárás</small><b id="phaseLock">—</b><small>0–1</small></article><article><small>Modellilleszkedés</small><b id="fit">—</b><small>R²</small></article><article><small>Értékelt ütések</small><b id="beats">—</b><small>db</small></article></div>
+<p class="note">A kapcsolatmutató a program által vezetett légzési fázishoz illeszti az IBI-ingadozást. Ez becslés, nem klinikailag validált koherenciaindex, és nem bizonyítja a tényleges légzés megtörténtét.</p></section>
+<section class="panel"><h2>Használati és biztonsági tudnivalók</h2><ul><li>A teszt alapritmusa 5,5 + 5,5 másodperc.</li><li>A rezonanciateszt 3×3 kombinációt vizsgál, véletlenszerű sorrendben.</li><li>Az adaptív mód csak megfelelő minőségű adat mellett módosít, kis lépésekben.</li><li>A program nem orvostechnikai eszköz, nem diagnosztizál és nem helyettesít orvosi vizsgálatot.</li></ul></section>
+<footer>Az adatok feldolgozása helyben, a böngészőben történik. A teszteredmények csak az aktuális munkamenetben élnek.</footer>
+</main><script src="app.js"></script></body></html>
