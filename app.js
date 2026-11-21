@@ -1,6 +1,8 @@
 // Heart Coherence v0.3 — experimental camera PPG and paced-breathing analysis.
 const $=id=>document.getElementById(id), clamp=(x,a,b)=>Math.max(a,Math.min(b,x)), fmt=(x,d=1)=>Number(x).toFixed(d).replace(".",",");
-let inhale=5.5,exhale=5.5,breathing=false,phase="inhale",phaseStart=0,phaseDur=0,raf=0,scanRunning=false,scanTimer=null,autoMode=false;
+let inhale=5.5,exhale=5.5,breathing=false,phase="inhale",phaseStart=0,phaseDur=0,raf=0,scanRunning=false,scanTimer=null,autoMode=false,lastAutoAdapt=Date.now();
+const PREF_KEY="heart-coherence-v04-preferences";
+try{autoMode=localStorage.getItem("heart-coherence-v04-auto")==="1";const saved=JSON.parse(localStorage.getItem(PREF_KEY)||"null");if(saved&&Number.isFinite(saved.inhale)&&Number.isFinite(saved.exhale)&&saved.inhale>=4&&saved.inhale<=7&&saved.exhale>=4&&saved.exhale<=7){inhale=saved.inhale;exhale=saved.exhale;}}catch(e){}
 let stream=null,track=null,videoSamples=[],ibiRaw=[],ibiClean=[],peakTimes=[],frameRaf=0,signal=[],lastCandidate=0,prevFiltered=0,prevPrev=0,baseline=0,noise=0;
 let metrics={quality:0,rmssd:null,sdnn:null,bpm:null,amp:null,lock:null,r2:null,n:0};
 let history=[]; // {t, ibi}; timestamps in ms
@@ -10,6 +12,7 @@ function phaseStartNow(p){phase=p;phaseStart=performance.now();phaseDur=(p==="in
 $("startBtn").onclick=()=>{if(breathing)return;breathing=true;$("startBtn").disabled=true;$("stopBtn").disabled=false;$("status").textContent="Légzés aktív";phaseStartNow("inhale")};
 $("stopBtn").onclick=()=>{breathing=false;cancelAnimationFrame(raf);$("startBtn").disabled=false;$("stopBtn").disabled=true;$("status").textContent="Szünet";$("phase").textContent="Szünet";$("countdown").textContent="—";$("orb").className="orb";};
 updateTimes();
+function savePreferences(){try{localStorage.setItem(PREF_KEY,JSON.stringify({inhale,exhale,updatedAt:new Date().toISOString()}));localStorage.setItem("heart-coherence-v04-auto",autoMode?"1":"0")}catch(e){}}
 
 // Camera sample: robust red/green ratio, clipping and frame-to-frame motion indicators.
 const cvs=$("sampleCanvas"),cx=cvs.getContext("2d",{willReadFrequently:true});
@@ -48,9 +51,9 @@ $("cameraBtn").onclick=startCamera;$("cameraStopBtn").onclick=stopCamera;
 
 // Estimate respiratory sinus arrhythmia coupling against the *paced* respiratory phase.
 // Linear harmonic regression of IBI against phase; this is a research proxy, not a validated coherence score.
-function couplingForWindow(start,end,inh,exh){
+function couplingForWindow(start,end,inh,exh,origin=start){
  const pts=history.filter(p=>p.t>=start&&p.t<=end);if(pts.length<8||metrics.quality<.55)return null;
- let X=[],Y=[];for(const p of pts){let cyc=inh+exh,rel=((p.t-start)% (cyc*1000))/1000,ang=2*Math.PI*(rel/cyc);X.push([1,Math.sin(ang),Math.cos(ang)]);Y.push(p.ibi)}
+ let X=[],Y=[];for(const p of pts){let cyc=inh+exh,rel=((p.t-origin)%(cyc*1000)+cyc*1000)%(cyc*1000)/1000;let ang=rel<inh?Math.PI*(rel/inh):Math.PI+Math.PI*((rel-inh)/exh);X.push([1,Math.sin(ang),Math.cos(ang)]);Y.push(p.ibi)}
  const solve3=A=>{let m=A.map(r=>r.slice());for(let i=0;i<3;i++){let k=i;for(let j=i+1;j<3;j++)if(Math.abs(m[j][i])>Math.abs(m[k][i]))k=j;[m[i],m[k]]=[m[k],m[i]];if(Math.abs(m[i][i])<1e-8)return null;let d=m[i][i];for(let c=i;c<4;c++)m[i][c]/=d;for(let j=0;j<3;j++)if(j!==i){d=m[j][i];for(let c=i;c<4;c++)m[j][c]-=d*m[i][c]}}return m.map(r=>r[3])};
  let A=Array.from({length:3},()=>[0,0,0,0]);for(let i=0;i<X.length;i++)for(let r=0;r<3;r++){A[r][3]+=X[i][r]*Y[i];for(let c=0;c<3;c++)A[r][c]+=X[i][r]*X[i][c]}
  let beta=solve3(A);if(!beta)return null;let avg=Y.reduce((a,b)=>a+b,0)/Y.length,ss=0,err=0;for(let i=0;i<Y.length;i++){let pred=beta[0]+beta[1]*X[i][1]+beta[2]*X[i][2];ss+=(Y[i]-avg)**2;err+=(Y[i]-pred)**2}
@@ -65,14 +68,17 @@ function setBreath(i,e){inhale=i;exhale=e;updateTimes()}
 function shuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 async function runScan(){if(!stream){alert("Előbb indítsd el a kamerás pulzusmérést.");return}if(scanRunning)return;let s;try{s=settings()}catch(e){alert(e.message);return}
  scanRunning=true;$("scanBtn").disabled=true;$("autoBtn").disabled=true;$("scanResults").textContent="";let combos=shuffle([.0,.5,1].flatMap(i=>[.0,.5,1].map(j=>({i:s.a+(s.b-s.a)*i,e:s.c+(s.d-s.c)*j}))));let results=[];
- try{for(let k=0;k<combos.length;k++){let q=combos[k];setBreath(q.i,q.e);if(!breathing){breathing=true;$("startBtn").disabled=true;$("stopBtn").disabled=false}phaseStartNow("inhale");$("scanStatus").textContent=`Teszt ${k+1}/9 · ${fmt(q.i)} mp be / ${fmt(q.e)} mp ki`;let start=performance.now();await wait(10000);let measureStart=performance.now();await wait(Math.max(20000,s.dur*1000-10000));let m=couplingForWindow(measureStart,performance.now(),q.i,q.e);if(m)results.push({...q,...m});}
+ try{for(let k=0;k<combos.length;k++){let q=combos[k];setBreath(q.i,q.e);if(!breathing){breathing=true;$("startBtn").disabled=true;$("stopBtn").disabled=false}phaseStartNow("inhale");let cycleOrigin=phaseStart;$("scanStatus").textContent=`Teszt ${k+1}/9 · ${fmt(q.i)} mp be / ${fmt(q.e)} mp ki`;await wait(10000);let measureStart=performance.now();await wait(Math.max(20000,s.dur*1000-10000));let m=couplingForWindow(measureStart,performance.now(),q.i,q.e,cycleOrigin);if(m)results.push({...q,...m});}
  }catch(e){$("scanStatus").textContent="A teszt megszakadt: "+e.message}
  scanRunning=false;$("scanBtn").disabled=false;$("autoBtn").disabled=false;
- if(results.length){results.sort((a,b)=>(b.quality*b.r2*b.amp)-(a.quality*a.r2*a.amp));let best=results[0];setBreath(best.i,best.e);$("scanStatus").textContent=`Teszt kész. Legígéretesebb kombináció: ${fmt(best.i)} mp belégzés + ${fmt(best.e)} mp kilégzés.`;$("scanResults").textContent=results.map((r,i)=>`${i+1}. ${fmt(r.i)} + ${fmt(r.e)} mp | RSA ${fmt(r.amp,1)} ms | illeszkedés ${fmt(r.r2,2)} | jel ${fmt(r.quality*100,0)}%`).join("\n")+"\n\nEz előzetes, vezetett légzéshez viszonyított becslés; nem klinikai rezonancia-meghatározás.";}else{$("scanStatus").textContent="Nem volt elegendő jó minőségű adat. Próbáld újra nyugodtabb kézzel, stabil ujjnyomással."}
+ if(results.length){results.sort((a,b)=>(b.quality*b.r2*clamp(b.amp/100,0,1))-(a.quality*a.r2*clamp(a.amp/100,0,1)));let best=results[0];setBreath(best.i,best.e);autoMode=true;lastAutoAdapt=Date.now();savePreferences();$("scanStatus").textContent=`Teszt kész. Legígéretesebb kombináció: ${fmt(best.i)} mp belégzés + ${fmt(best.e)} mp kilégzés.`;$("scanResults").textContent=results.map((r,i)=>`${i+1}. ${fmt(r.i)} + ${fmt(r.e)} mp | RSA ${fmt(r.amp,1)} ms | illeszkedés ${fmt(r.r2,2)} | jel ${fmt(r.quality*100,0)}%`).join("\n")+"\n\nEz előzetes, vezetett légzéshez viszonyított becslés; nem klinikai rezonancia-meghatározás.";}else{$("scanStatus").textContent="Nem volt elegendő jó minőségű adat. Próbáld újra nyugodtabb kézzel, stabil ujjnyomással."}
 }
 $("scanBtn").onclick=runScan;
 
 // Independent coordinate-style fine tuning around selected candidate. One parameter changes at a time.
-async function runAdaptive(){if(!stream){alert("Előbb indítsd el a kamerás pulzusmérést.");return}if(scanRunning)return;scanRunning=true;$("autoBtn").disabled=true;$("scanBtn").disabled=true;let best={i:inhale,e:exhale,score:-1};try{for(let round=0;round<3;round++){for(let axis of ["i","e"]){let candidates=[-.2,0,.2].map(d=>({i:clamp(best.i+(axis==="i"?d:0),4,7),e:clamp(best.e+(axis==="e"?d:0),4,7)}));for(let q of candidates){setBreath(q.i,q.e);if(!breathing){breathing=true;$("startBtn").disabled=true;$("stopBtn").disabled=false}phaseStartNow("inhale");$("scanStatus").textContent=`Adaptív finomhangolás ${round+1}/3 · ${axis==="i"?"belégzés":"kilégzés"}`;await wait(8000);let t=performance.now();await wait(30000);let m=couplingForWindow(t,performance.now(),q.i,q.e);if(m){let score=m.quality*m.r2*m.amp;if(score>best.score)best={i:q.i,e:q.e,score,...m}}}}}setBreath(best.i,best.e);$("scanStatus").textContent=best.score>=0?`Finomhangolás kész: ${fmt(best.i)} mp belégzés + ${fmt(best.e)} mp kilégzés.`:"Nem volt elég jó minőségű adat az optimalizáláshoz.";}finally{scanRunning=false;$("autoBtn").disabled=false;$("scanBtn").disabled=false}}
+async function runAdaptive(){if(!stream){alert("Előbb indítsd el a kamerás pulzusmérést.");return}if(scanRunning)return;scanRunning=true;$("autoBtn").disabled=true;$("scanBtn").disabled=true;let best={i:inhale,e:exhale,score:-1};try{for(let round=0;round<3;round++){for(let axis of ["i","e"]){let candidates=[-.2,0,.2].map(d=>({i:clamp(best.i+(axis==="i"?d:0),4,7),e:clamp(best.e+(axis==="e"?d:0),4,7)}));for(let q of candidates){setBreath(q.i,q.e);if(!breathing){breathing=true;$("startBtn").disabled=true;$("stopBtn").disabled=false}phaseStartNow("inhale");let cycleOrigin=phaseStart;$("scanStatus").textContent=`Adaptív finomhangolás ${round+1}/3 · ${axis==="i"?"belégzés":"kilégzés"}`;await wait(8000);let t=performance.now();await wait(30000);let m=couplingForWindow(t,performance.now(),q.i,q.e,cycleOrigin);if(m){let score=m.quality*m.r2*clamp(m.amp/100,0,1);if(score>best.score)best={i:q.i,e:q.e,score,...m}}}}}setBreath(best.i,best.e);if(best.score>=0)savePreferences();lastAutoAdapt=Date.now();$("scanStatus").textContent=best.score>=0?`Finomhangolás kész: ${fmt(best.i)} mp belégzés + ${fmt(best.e)} mp kilégzés.`:"Nem volt elég jó minőségű adat az optimalizáláshoz.";}finally{scanRunning=false;$("autoBtn").disabled=false;$("scanBtn").disabled=false}}
 $("autoBtn").onclick=runAdaptive;
+// After a successful calibration, automatically perform a cautious re-check every 10 minutes
+// while both paced breathing and camera sampling are active. No background camera access.
+setInterval(()=>{if(autoMode&&breathing&&stream&&!scanRunning&&Date.now()-lastAutoAdapt>=10*60*1000){runAdaptive()}},30000);
 if("serviceWorker"in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));

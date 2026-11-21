@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="hu"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101c29"><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="style.css"><title>Heart Coherence</title></head>
 <body><main class="app">
-<header><div><p class="eyebrow">ADAPTÍV LÉGZÉS · PPG</p><h1>Heart Coherence</h1></div><span id="status" class="pill">Készen áll</span></header>
+<header><div><p class="eyebrow">ADAPTÍV LÉGZÉS · PPG · v0.4</p><h1>Heart Coherence</h1></div><span id="status" class="pill">Készen áll</span></header>
 <section class="panel hero">
 <div class="orb-wrap"><div id="orb" class="orb"><div><span id="phase">Készen áll</span><strong id="countdown">5,5</strong><small>másodperc</small></div></div></div>
 <div class="timings"><div><small>Belégzés</small><b id="inhaleValue">5,5 mp</b></div><div><small>Kilégzés</small><b id="exhaleValue">5,5 mp</b></div><div><small>Légzés</small><b id="rpmValue">5,45 / perc</b></div></div>
@@ -24,5 +24,5 @@
 <div class="grid metrics"><article><small>RSA amplitúdó</small><b id="rsa">—</b><small>ms</small></article><article><small>Fáziszárás</small><b id="phaseLock">—</b><small>0–1</small></article><article><small>Modellilleszkedés</small><b id="fit">—</b><small>R²</small></article><article><small>Értékelt ütések</small><b id="beats">—</b><small>db</small></article></div>
 <p class="note">A kapcsolatmutató a program által vezetett légzési fázishoz illeszti az IBI-ingadozást. Ez becslés, nem klinikailag validált koherenciaindex, és nem bizonyítja a tényleges légzés megtörténtét.</p></section>
 <section class="panel"><h2>Használati és biztonsági tudnivalók</h2><ul><li>A teszt alapritmusa 5,5 + 5,5 másodperc.</li><li>A rezonanciateszt 3×3 kombinációt vizsgál, véletlenszerű sorrendben.</li><li>Az adaptív mód csak megfelelő minőségű adat mellett módosít, kis lépésekben.</li><li>A program nem orvostechnikai eszköz, nem diagnosztizál és nem helyettesít orvosi vizsgálatot.</li></ul></section>
-<footer>Az adatok feldolgozása helyben, a böngészőben történik. A teszteredmények csak az aktuális munkamenetben élnek.</footer>
+<footer>Az adatok feldolgozása helyben, a böngészőben történik. A kiválasztott belégzési és kilégzési idők helyben mentődnek; nyers pulzusadat nem kerül tartós tárolásra.</footer>
 </main><script src="app.js"></script></body></html>
